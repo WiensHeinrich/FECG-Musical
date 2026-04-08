@@ -105,18 +105,7 @@ CREATE TABLE reserved_seats (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Ein Sitz kann pro Aufführung nur einmal reserviert werden
-CREATE UNIQUE INDEX idx_reserved_seats_unique
-  ON reserved_seats(seat_id, performance_id)
-  WHERE EXISTS (
-    SELECT 1 FROM reservations r
-    WHERE r.id = reservation_id
-    AND r.status IN ('reserviert', 'bestätigt')
-  );
-
--- Alternativer, einfacherer Unique-Index (ohne Subquery)
--- Wir nutzen stattdessen einen Check in der RPC-Funktion
-DROP INDEX IF EXISTS idx_reserved_seats_unique;
+-- Einzigartigkeit wird in der RPC-Funktion create_seat_reservation() geprüft
 
 CREATE INDEX idx_reserved_seats_reservation ON reserved_seats(reservation_id);
 CREATE INDEX idx_reserved_seats_performance ON reserved_seats(performance_id);
