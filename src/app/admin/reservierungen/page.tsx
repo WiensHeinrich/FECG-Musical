@@ -1,30 +1,15 @@
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { getReservationsList } from "@/lib/queries/admin"
 import { formatShortDate } from "@/lib/utils"
+import Link from "next/link"
+import { Eye } from "lucide-react"
 
 export const metadata = {
   title: "Reservierungen",
-}
-
-const statusColors: Record<string, string> = {
-  reserviert: "bg-yellow-100 text-yellow-800",
-  bestätigt: "bg-emerald-100 text-emerald-800",
-  storniert: "bg-red-100 text-red-800",
-  abgelaufen: "bg-gray-100 text-gray-800",
-}
-
-const paymentColors: Record<string, string> = {
-  ausstehend: "bg-yellow-100 text-yellow-800",
-  bezahlt: "bg-emerald-100 text-emerald-800",
-  erstattet: "bg-red-100 text-red-800",
 }
 
 export default async function ReservierungenPage() {
@@ -32,7 +17,14 @@ export default async function ReservierungenPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">Reservierungen</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Reservierungen</h1>
+        <Link href="/api/admin/export-pdf" target="_blank">
+          <Button variant="outline" size="sm">
+            Zahlungsübersicht (PDF)
+          </Button>
+        </Link>
+      </div>
 
       {reservations.length === 0 ? (
         <p className="text-muted-foreground">Noch keine Reservierungen vorhanden.</p>
@@ -45,9 +37,11 @@ export default async function ReservierungenPage() {
                 <TableHead>E-Mail</TableHead>
                 <TableHead>Plätze</TableHead>
                 <TableHead>Betrag</TableHead>
+                <TableHead>Methode</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Zahlung</TableHead>
                 <TableHead>Datum</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -60,27 +54,40 @@ export default async function ReservierungenPage() {
                     {r.contact_email as string}
                   </TableCell>
                   <TableCell>
-                    {(r.reserved_seats as unknown[])?.length || 0}
+                    {String((r.reserved_seats as unknown[])?.length || "-")}
                   </TableCell>
                   <TableCell>{r.total_amount as number},00 EUR</TableCell>
+                  <TableCell className="text-sm">
+                    {(r.payment_method as string) === "paypal" ? "PayPal" : "Überw."}
+                  </TableCell>
                   <TableCell>
                     <Badge
-                      variant="secondary"
-                      className={statusColors[r.status as string] || ""}
+                      variant={
+                        r.status === "bestätigt" ? "default" :
+                        r.status === "reserviert" ? "outline" :
+                        r.status === "storniert" ? "destructive" :
+                        "secondary"
+                      }
                     >
-                      {r.status as string}
+                      {String(r.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant="secondary"
-                      className={paymentColors[r.payment_status as string] || ""}
+                      variant={(r.payment_status as string) === "bezahlt" ? "default" : "outline"}
                     >
-                      {r.payment_status as string}
+                      {String(r.payment_status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">
                     {formatShortDate(r.created_at as string)}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link href={`/admin/reservierungen/${r.id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
